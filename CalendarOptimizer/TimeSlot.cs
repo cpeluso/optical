@@ -15,5 +15,6 @@ namespace CalendarOptimizer
         public int StartTime { get; set; }
         public int EndTime { get; set; }
         public int Length { get; set; }
+        public bool ToDelete { get; set; }
     }
 }
