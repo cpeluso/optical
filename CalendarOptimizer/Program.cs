@@ -8,16 +8,14 @@ namespace CalendarOptimizer
     public class Program
     {
         private static List<Person> _people = new List<Person>();
+        private static List<TimeSlot> _freeCommonIntervals = new List<TimeSlot>();
 
         static void Main(string[] args)
         {
             DefinePeople();
             //ReadFile("/Users/carlopeluso/Desktop/file.txt");
 
-            //foreach person...
-            fstPerson.ComputeFreeIntervals();
-            sndPerson.ComputeFreeIntervals();
-
+            foreach ( Person person in _people ) person.ComputeFreeIntervals();
 
 
         }
@@ -32,6 +30,7 @@ namespace CalendarOptimizer
             fst.ReperibleFrom = 540;
             fst.ReperibleTo = 1200;
             fst.Meetings.Add(new TimeSlot ( 600, 660 ));
+            fst.Meetings.Add(new TimeSlot ( 630, 680 ));
             fst.Meetings.Add(new TimeSlot ( 750, 870 ));
             fst.Meetings.Add(new TimeSlot ( 900, 930 ));
             fst.Meetings.Add(new TimeSlot ( 1080, 1140 ));
@@ -46,6 +45,7 @@ namespace CalendarOptimizer
 
             _people.Add(fst);
             _people.Add(snd);
+
         }
 
 
