@@ -9,7 +9,7 @@ namespace CalendarOptimizer
     {
         private static List<Person> _people = new List<Person>();
         private static List<TimeSlot> _freeCommonIntervals = new List<TimeSlot>();
-        private static int _minLength = 30;
+        private static int _minLength;
 
         static void Main(string[] args)
         {
@@ -19,7 +19,7 @@ namespace CalendarOptimizer
 
             SearchCommonIntervals();
 
-
+            PrintOutput();
         }
 
         static void SearchCommonIntervals()
@@ -28,13 +28,12 @@ namespace CalendarOptimizer
             _people.Remove(referencePerson);
             _freeCommonIntervals = referencePerson.FreeIntervals;
 
-            foreach(Person person in _people)
-                ComputeIntersections(person);
+            bool intersectionsFound = true;
 
-
+            while (intersectionsFound) foreach(Person person in _people) intersectionsFound = ComputeIntersections(person);
         }
 
-        static void ComputeIntersections(Person sndPerson)
+        static bool ComputeIntersections(Person sndPerson)
         {
             List<TimeSlot> currentCommonIntervals = new List<TimeSlot>();
 
@@ -44,6 +43,9 @@ namespace CalendarOptimizer
                         currentCommonIntervals.Add(GetIntersection(freeInterval, personFreeInterval));
 
             _freeCommonIntervals = currentCommonIntervals;
+
+            if (_freeCommonIntervals.Count <= 0) return false;
+            return true;
 
         }
 
@@ -74,30 +76,63 @@ namespace CalendarOptimizer
         //Just for having an input...
         static void LoadCalendars()
         {
-            Person fst = new Person();
-            Person snd = new Person();
+            Person first = new Person();
+            Person second = new Person();
+            Person third = new Person();
+            Person fourth = new Person();
 
-            fst.AvailableFrom = 540;
-            fst.AvailableTo = 1200;
-            fst.Meetings.Add(new TimeSlot ( 400, 460 )); 
-            fst.Meetings.Add(new TimeSlot ( 500, 610 ));
-            fst.Meetings.Add(new TimeSlot ( 600, 660 ));
-            fst.Meetings.Add(new TimeSlot ( 630, 680 )); 
-            fst.Meetings.Add(new TimeSlot ( 750, 870 )); 
-            fst.Meetings.Add(new TimeSlot ( 900, 930 ));
-            fst.Meetings.Add(new TimeSlot ( 1080, 1140 ));
+            first.AvailableFrom = 540;
+            first.AvailableTo = 1200;
+            first.Meetings.Add(new TimeSlot ( 400, 460 )); 
+            first.Meetings.Add(new TimeSlot ( 500, 610 ));
+            first.Meetings.Add(new TimeSlot ( 600, 660 ));
+            first.Meetings.Add(new TimeSlot ( 630, 680 )); 
+            first.Meetings.Add(new TimeSlot ( 750, 870 )); 
+            first.Meetings.Add(new TimeSlot ( 900, 930 ));
+            first.Meetings.Add(new TimeSlot ( 1080, 1140 ));
 
-            snd.AvailableFrom = 540;
-            snd.AvailableTo = 1200;
-            snd.Meetings.Add(new TimeSlot ( 540, 630 )); 
-            snd.Meetings.Add(new TimeSlot ( 720, 750 ));
-            snd.Meetings.Add(new TimeSlot ( 780, 930 ));
-            snd.Meetings.Add(new TimeSlot ( 960, 1020 ));
-            snd.Meetings.Add(new TimeSlot ( 1080, 1110 ));
+            second.AvailableFrom = 540;
+            second.AvailableTo = 1200;
+            second.Meetings.Add(new TimeSlot ( 540, 630 )); 
+            second.Meetings.Add(new TimeSlot ( 720, 750 ));
+            second.Meetings.Add(new TimeSlot ( 780, 930 ));
+            second.Meetings.Add(new TimeSlot ( 960, 1020 ));
+            second.Meetings.Add(new TimeSlot ( 1080, 1110 ));
 
-            _people.Add(fst);
-            _people.Add(snd);
+            third.AvailableFrom = 540;
+            third.AvailableTo = 1200;
+            third.Meetings.Add(new TimeSlot(540, 750));
+            third.Meetings.Add(new TimeSlot(780, 930));
+            third.Meetings.Add(new TimeSlot(960, 1080));
+            third.Meetings.Add(new TimeSlot(1080, 1110));
 
+            third.AvailableFrom = 540;
+            third.AvailableTo = 1200;
+            third.Meetings.Add(new TimeSlot(540, 750));
+            third.Meetings.Add(new TimeSlot(780, 930));
+            third.Meetings.Add(new TimeSlot(960, 1080));
+            third.Meetings.Add(new TimeSlot(1080, 1110));
+
+            //fourth.AvailableFrom = 540;
+            //fourth.AvailableTo = 550;
+            //fourth.Meetings.Add(new TimeSlot(540, 750));
+            //fourth.Meetings.Add(new TimeSlot(780, 930));
+            //fourth.Meetings.Add(new TimeSlot(960, 1080));
+            //fourth.Meetings.Add(new TimeSlot(1080, 1110));
+
+            _people.Add(first);
+            _people.Add(second);
+            _people.Add(third);
+            //_people.Add(fourth);
+
+            _minLength = 30;
+
+        }
+
+        static void PrintOutput()
+        {
+            if (_freeCommonIntervals.Count == 0) Console.WriteLine("Impossibile schedulare un meeting oggi.");
+            foreach (TimeSlot timeSlot in _freeCommonIntervals) Console.WriteLine(timeSlot.StartTime + " - " + timeSlot.EndTime + ". Tempo: " + timeSlot.Length);
         }
 
 
