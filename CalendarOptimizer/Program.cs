@@ -7,32 +7,24 @@ namespace CalendarOptimizer
 {
     public class Program
     {
+        private static List<Person> _people = new List<Person>();
+
         static void Main(string[] args)
         {
-            var (fstPerson, sndPerson) = DefinePeople();
+            DefinePeople();
             //ReadFile("/Users/carlopeluso/Desktop/file.txt");
-            ComputeFreeInterval(fstPerson);
 
-
-
-                    
-                
+            //foreach person...
+            fstPerson.ComputeFreeIntervals();
+            sndPerson.ComputeFreeIntervals();
 
 
 
         }
 
-        static void ComputeFreeInterval(Person person)
-        {
-            var numberOfMeetings = person.Meetings.Count;
-            if (person.FreeIntervals.Count == 0) //Currently no free intervals retrieved
-            {
-                TimeSlot timeSlot = new TimeSlot();
-                timeSlot.StartTime = person.ReperibleFrom;
-            }
-        }
 
-        static (Person, Person) DefinePeople()
+
+        static void DefinePeople()
         {
             Person fst = new Person();
             Person snd = new Person();
@@ -52,7 +44,8 @@ namespace CalendarOptimizer
             snd.Meetings.Add(new TimeSlot ( 960, 1020 ));
             snd.Meetings.Add(new TimeSlot ( 1080, 1110 ));
 
-            return (fst, snd);
+            _people.Add(fst);
+            _people.Add(snd);
         }
 
 
