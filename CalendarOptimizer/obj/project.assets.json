@@ -13,11 +13,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "/Users/carlopeluso/Projects/CalendarOptimizer/CalendarOptimizer/CalendarOptimizer.csproj",
+      "projectUniqueName": "/Users/carlopeluso/Projects/optical/CalendarOptimizer/CalendarOptimizer.csproj",
       "projectName": "CalendarOptimizer",
-      "projectPath": "/Users/carlopeluso/Projects/CalendarOptimizer/CalendarOptimizer/CalendarOptimizer.csproj",
+      "projectPath": "/Users/carlopeluso/Projects/optical/CalendarOptimizer/CalendarOptimizer.csproj",
       "packagesPath": "/Users/carlopeluso/.nuget/packages/",
-      "outputPath": "/Users/carlopeluso/Projects/CalendarOptimizer/CalendarOptimizer/obj/",
+      "outputPath": "/Users/carlopeluso/Projects/optical/CalendarOptimizer/obj/",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "/Users/carlopeluso/.config/NuGet/NuGet.Config"
