@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace CalendarOptimizer
 {
@@ -11,74 +12,87 @@ namespace CalendarOptimizer
 
         public List<TimeSlot> Meetings = new List<TimeSlot>();
         public List<TimeSlot> FreeIntervals = new List<TimeSlot>();
-        public int ReperibleFrom { get; set; }
-        public int ReperibleTo { get; set; }
+        public int AvailableFrom { get; set; }
+        public int AvailableTo { get; set; }
 
-
-        //This method assumes that there are only meetings separated in time
         public void ComputeFreeIntervals()
         {
-            IncorporateMeetings();
+            PruneMeetingsOutsideAvailabilityHours();
+            MergeMeetings();
+
             int numberOfMeetings = Meetings.Count;
             int i;
 
-            FreeIntervals.Add(new TimeSlot(ReperibleFrom, Meetings[0].StartTime));
+            FreeIntervals.Add(new TimeSlot(AvailableFrom, Meetings[0].StartTime));
 
             for ( i = 0; i < numberOfMeetings - 1; i++ ) FreeIntervals.Add(new TimeSlot(Meetings[i].EndTime, Meetings[i + 1].StartTime));
 
-            FreeIntervals.Add(new TimeSlot(Meetings[i].EndTime, ReperibleTo));
-
+            FreeIntervals.Add(new TimeSlot(Meetings[i].EndTime, AvailableTo));
         }
 
-        private void IncorporateMeetings()
+        private void PruneMeetingsOutsideAvailabilityHours()
         {
-            List<TimeSlot> incorporatedMeetings = new List<TimeSlot>();
-            TimeSlot incorporatedMeeting;
+            Meetings.RemoveAll(
+            meeting =>
+                (meeting.StartTime < AvailableFrom && meeting.EndTime < AvailableFrom) ||
+                (meeting.EndTime > AvailableTo && meeting.StartTime > AvailableTo)
+            );
+
+            foreach (TimeSlot meeting in Meetings)
+            {
+                if (meeting.StartTime < AvailableFrom && meeting.EndTime < AvailableTo) meeting.StartTime = AvailableFrom;
+                if (meeting.EndTime > AvailableTo && meeting.StartTime < AvailableTo) meeting.EndTime = AvailableTo;
+            }
+        }
+
+
+        // This method assumes that Meetings is sorted with key StartTime
+        private void MergeMeetings()
+        {
+            List<TimeSlot> mergedMeetings = new List<TimeSlot>();
+            bool meetingsMerged = true;
+            int counter;
 
             for (int i = 0; i < Meetings.Count; i++)
             {
-                for (int j = i; j < Meetings.Count; j++)
+                counter = 1;
+                while (meetingsMerged && i + counter < Meetings.Count)
                 {
-                    TimeSlot timeSlot = Meetings[i];
-                    TimeSlot innerTimeSlot = Meetings[j];
+                    var meetingMerged = TryToMergeMeetings(Meetings[i], Meetings[i + counter]);
 
-                    incorporatedMeeting = TryToIncorporateMeetings(timeSlot, innerTimeSlot);
-
-                    if (incorporatedMeeting != null)
+                    if (meetingMerged != Meetings[i])
                     {
-                        Meetings[i] = incorporatedMeeting;
-                        Meetings.Remove(Meetings[j]);
+                        Meetings[i] = meetingMerged;
+                        Meetings[i + counter].ToDelete = true;
                     }
+                    else meetingsMerged = false;
 
+                    counter++;
                 }
-            }
 
+                Meetings.RemoveAll(meeting => meeting.ToDelete);
+            }
         }
 
-        private TimeSlot TryToIncorporateMeetings(TimeSlot fstTimeSlot, TimeSlot sndTimeSlot)
+        private TimeSlot TryToMergeMeetings(TimeSlot fstTimeSlot, TimeSlot sndTimeSlot)
         {
-            if ( fstTimeSlot.StartTime < sndTimeSlot.StartTime)
+            if ( fstTimeSlot.StartTime < sndTimeSlot.StartTime && fstTimeSlot.EndTime > sndTimeSlot.StartTime && fstTimeSlot.EndTime < sndTimeSlot.EndTime)
             {
-                if (fstTimeSlot.EndTime > sndTimeSlot.StartTime && fstTimeSlot.EndTime < sndTimeSlot.EndTime)
-                {
-                    return new TimeSlot(fstTimeSlot.StartTime, sndTimeSlot.EndTime);
-                }
+                return new TimeSlot(fstTimeSlot.StartTime, sndTimeSlot.EndTime);
             }
 
-            if ( fstTimeSlot.EndTime > sndTimeSlot.EndTime)
+            if ( fstTimeSlot.EndTime > sndTimeSlot.EndTime && fstTimeSlot.StartTime > sndTimeSlot.StartTime && fstTimeSlot.StartTime < sndTimeSlot.EndTime)
             {
-                if (fstTimeSlot.StartTime > sndTimeSlot.StartTime && fstTimeSlot.StartTime < sndTimeSlot.EndTime)
-                {
-                    return new TimeSlot(sndTimeSlot.StartTime, fstTimeSlot.EndTime);
-                }
+                return new TimeSlot(sndTimeSlot.StartTime, fstTimeSlot.EndTime);
             }
 
             if (fstTimeSlot.StartTime < sndTimeSlot.StartTime && fstTimeSlot.EndTime > sndTimeSlot.EndTime)
             {
+
                 return new TimeSlot(fstTimeSlot.StartTime, fstTimeSlot.EndTime);
             }
 
-            return null;
+            return fstTimeSlot;
         }
 
     }
