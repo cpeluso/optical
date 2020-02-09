@@ -1,7 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Text;
+using Google.Apis.Auth.OAuth2;
+using Google.Apis.Calendar.v3;
+using Google.Apis.Calendar.v3.Data;
+using Google.Apis.Services;
+using Google.Apis.Util.Store;
+using System.Threading;
 
 namespace CalendarOptimizer
 {
@@ -11,15 +16,71 @@ namespace CalendarOptimizer
         private static List<TimeSlot> _freeCommonIntervals = new List<TimeSlot>();
         private static int _minLength;
 
+        static string[] Scopes = { CalendarService.Scope.CalendarReadonly };
+        static string ApplicationName = "OptiCal";
+
         static void Main(string[] args)
         {
-            LoadCalendars();
+            //LoadCalendars();
 
-            foreach ( Person person in _people ) person.ComputeFreeIntervals();
+            //foreach ( Person person in _people ) person.ComputeFreeIntervals();
 
-            SearchCommonIntervals();
+            //SearchCommonIntervals();
 
-            PrintOutput();
+            //PrintOutput();
+
+            UserCredential credential;
+
+            using (var stream = new FileStream("/Users/carlopeluso/Projects/optical/CalendarOptimizer/credentials.json", FileMode.Open, FileAccess.Read))
+            {
+                // The file token.json stores the user's access and refresh tokens, and is created
+                // automatically when the authorization flow completes for the first time.
+                string credPath = "token.json";
+                credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
+                    GoogleClientSecrets.Load(stream).Secrets,
+                    Scopes,
+                    "user",
+                    CancellationToken.None,
+                    new FileDataStore(credPath, true)).Result;
+                Console.WriteLine("Credential file saved to: " + credPath);
+            }
+
+            // Create Google Calendar API service.
+            var service = new CalendarService(new BaseClientService.Initializer()
+            {
+                HttpClientInitializer = credential,
+                ApplicationName = ApplicationName,
+            });
+
+            // Define parameters of request.
+            EventsResource.ListRequest request = service.Events.List("primary");
+            request.TimeMin = DateTime.Now;
+            request.ShowDeleted = false;
+            request.SingleEvents = true;
+            request.MaxResults = 10;
+            request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
+
+            // List events.
+            Events events = request.Execute();
+            Console.WriteLine("Upcoming events:");
+            if (events.Items != null && events.Items.Count > 0)
+            {
+                foreach (var eventItem in events.Items)
+                {
+                    string when = eventItem.Start.DateTime.ToString();
+                    if (String.IsNullOrEmpty(when))
+                    {
+                        when = eventItem.Start.Date;
+                    }
+                    Console.WriteLine("{0} ({1})", eventItem.Summary, when);
+                }
+            }
+            else
+            {
+                Console.WriteLine("No upcoming events found.");
+            }
+            Console.Read();
+
         }
 
         static void SearchCommonIntervals()
@@ -98,13 +159,6 @@ namespace CalendarOptimizer
             second.Meetings.Add(new TimeSlot ( 780, 930 ));
             second.Meetings.Add(new TimeSlot ( 960, 1020 ));
             second.Meetings.Add(new TimeSlot ( 1080, 1110 ));
-
-            third.AvailableFrom = 540;
-            third.AvailableTo = 1200;
-            third.Meetings.Add(new TimeSlot(540, 750));
-            third.Meetings.Add(new TimeSlot(780, 930));
-            third.Meetings.Add(new TimeSlot(960, 1080));
-            third.Meetings.Add(new TimeSlot(1080, 1110));
 
             third.AvailableFrom = 540;
             third.AvailableTo = 1200;
