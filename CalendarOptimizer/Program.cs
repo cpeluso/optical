@@ -19,18 +19,27 @@ namespace CalendarOptimizer
         static string[] Scopes = { CalendarService.Scope.CalendarReadonly };
         static string ApplicationName = "OptiCal";
 
+        static UserCredential credential;
+        static CalendarService _service;
+
+        static bool _defaultLoading = false;
+        static string[] accounts = { "carlo@coolshop.it", "riccardo@coolshop.it" };
+
         static void Main(string[] args)
         {
-            //LoadCalendars();
+            LoadCredentials();
+            IstantiateGoogleCalendar();
 
-            //foreach ( Person person in _people ) person.ComputeFreeIntervals();
+
+            LoadCalendars(accounts);
+
 
             //SearchCommonIntervals();
-
             //PrintOutput();
+        }
 
-            UserCredential credential;
-
+        static void LoadCredentials()
+        {
             using (var stream = new FileStream("/Users/carlopeluso/Projects/optical/CalendarOptimizer/credentials.json", FileMode.Open, FileAccess.Read))
             {
                 // The file token.json stores the user's access and refresh tokens, and is created
@@ -42,49 +51,104 @@ namespace CalendarOptimizer
                     "user",
                     CancellationToken.None,
                     new FileDataStore(credPath, true)).Result;
-                Console.WriteLine("Credential file saved to: " + credPath);
             }
+        }
 
+        static void IstantiateGoogleCalendar()
+        {
             // Create Google Calendar API service.
-            var service = new CalendarService(new BaseClientService.Initializer()
+            _service = new CalendarService(new BaseClientService.Initializer()
             {
                 HttpClientInitializer = credential,
                 ApplicationName = ApplicationName,
             });
+        }
 
-            // Define parameters of request.
-            EventsResource.ListRequest request = service.Events.List("primary");
-            request.TimeMin = DateTime.Now;
-            request.ShowDeleted = false;
-            request.SingleEvents = true;
-            request.MaxResults = 10;
-            request.OrderBy = EventsResource.ListRequest.OrderByEnum.StartTime;
+        static void LoadCalendars(string[] accounts = null)
+        {
+            if (_defaultLoading) ExampleCalendar();
+            else SendRequests(accounts);
+        }
 
-            // List events.
-            Events events = request.Execute();
-            Console.WriteLine("Upcoming events:");
-            if (events.Items != null && events.Items.Count > 0)
+        static void SendRequests(string[] accounts)
+        {
+            foreach (string account in accounts)
             {
-                foreach (var eventItem in events.Items)
+                FreeBusyRequestItem calendar = new FreeBusyRequestItem();
+                FreeBusyRequest body = new FreeBusyRequest();
+                body.TimeMin = Convert.ToDateTime("2020-01-05T00:00:00.000Z");
+                body.TimeMax = Convert.ToDateTime("2020-03-05T23:59:59.000Z");
+                body.Items = new List<FreeBusyRequestItem>();
+                calendar.Id = account;
+                body.Items.Add(calendar);
+                body.TimeZone = "Europe/Rome";
+
+                FreebusyResource.QueryRequest request = _service.Freebusy.Query(body);
+                FreeBusyResponse results = request.Execute();
+
+                foreach (var cal in results.Calendars)
                 {
-                    string when = eventItem.Start.DateTime.ToString();
-                    if (String.IsNullOrEmpty(when))
+                    foreach (var b in cal.Value.Busy)
                     {
-                        when = eventItem.Start.Date;
+                        Console.WriteLine(b.Start + " - " + b.End);
                     }
-                    Console.WriteLine("{0} ({1})", eventItem.Summary, when);
+                    Console.WriteLine("- - - - - - - - -");
                 }
             }
-            else
-            {
-                Console.WriteLine("No upcoming events found.");
-            }
-            Console.Read();
+            
+        }
 
+        static void ExampleCalendar()
+        {
+            Person first = new Person();
+            Person second = new Person();
+            Person third = new Person();
+            Person fourth = new Person();
+
+            first.AvailableFrom = 540;
+            first.AvailableTo = 1200;
+            first.Meetings.Add(new TimeSlot(400, 460));
+            first.Meetings.Add(new TimeSlot(500, 610));
+            first.Meetings.Add(new TimeSlot(600, 660));
+            first.Meetings.Add(new TimeSlot(630, 680));
+            first.Meetings.Add(new TimeSlot(750, 870));
+            first.Meetings.Add(new TimeSlot(900, 930));
+            first.Meetings.Add(new TimeSlot(1080, 1140));
+
+            second.AvailableFrom = 540;
+            second.AvailableTo = 1200;
+            second.Meetings.Add(new TimeSlot(540, 630));
+            second.Meetings.Add(new TimeSlot(720, 750));
+            second.Meetings.Add(new TimeSlot(780, 930));
+            second.Meetings.Add(new TimeSlot(960, 1020));
+            second.Meetings.Add(new TimeSlot(1080, 1110));
+
+            third.AvailableFrom = 540;
+            third.AvailableTo = 1200;
+            third.Meetings.Add(new TimeSlot(540, 750));
+            third.Meetings.Add(new TimeSlot(780, 930));
+            third.Meetings.Add(new TimeSlot(960, 1080));
+            third.Meetings.Add(new TimeSlot(1080, 1110));
+
+            //fourth.AvailableFrom = 540;
+            //fourth.AvailableTo = 550;
+            //fourth.Meetings.Add(new TimeSlot(540, 750));
+            //fourth.Meetings.Add(new TimeSlot(780, 930));
+            //fourth.Meetings.Add(new TimeSlot(960, 1080));
+            //fourth.Meetings.Add(new TimeSlot(1080, 1110));
+
+            _people.Add(first);
+            _people.Add(second);
+            _people.Add(third);
+            //_people.Add(fourth);
+
+            _minLength = 30;
         }
 
         static void SearchCommonIntervals()
         {
+            foreach (Person person in _people) person.ComputeFreeIntervals();
+
             Person referencePerson = _people[0];
             _people.Remove(referencePerson);
             _freeCommonIntervals = referencePerson.FreeIntervals;
@@ -107,7 +171,6 @@ namespace CalendarOptimizer
 
             if (_freeCommonIntervals.Count <= 0) return false;
             return true;
-
         }
 
         static bool CanBeIntersected(TimeSlot fstTimeSlot, TimeSlot sndTimeSlot)
@@ -134,62 +197,11 @@ namespace CalendarOptimizer
             return timeSlot;
         }
 
-        //Just for having an input...
-        static void LoadCalendars()
-        {
-            Person first = new Person();
-            Person second = new Person();
-            Person third = new Person();
-            Person fourth = new Person();
-
-            first.AvailableFrom = 540;
-            first.AvailableTo = 1200;
-            first.Meetings.Add(new TimeSlot ( 400, 460 )); 
-            first.Meetings.Add(new TimeSlot ( 500, 610 ));
-            first.Meetings.Add(new TimeSlot ( 600, 660 ));
-            first.Meetings.Add(new TimeSlot ( 630, 680 )); 
-            first.Meetings.Add(new TimeSlot ( 750, 870 )); 
-            first.Meetings.Add(new TimeSlot ( 900, 930 ));
-            first.Meetings.Add(new TimeSlot ( 1080, 1140 ));
-
-            second.AvailableFrom = 540;
-            second.AvailableTo = 1200;
-            second.Meetings.Add(new TimeSlot ( 540, 630 )); 
-            second.Meetings.Add(new TimeSlot ( 720, 750 ));
-            second.Meetings.Add(new TimeSlot ( 780, 930 ));
-            second.Meetings.Add(new TimeSlot ( 960, 1020 ));
-            second.Meetings.Add(new TimeSlot ( 1080, 1110 ));
-
-            third.AvailableFrom = 540;
-            third.AvailableTo = 1200;
-            third.Meetings.Add(new TimeSlot(540, 750));
-            third.Meetings.Add(new TimeSlot(780, 930));
-            third.Meetings.Add(new TimeSlot(960, 1080));
-            third.Meetings.Add(new TimeSlot(1080, 1110));
-
-            //fourth.AvailableFrom = 540;
-            //fourth.AvailableTo = 550;
-            //fourth.Meetings.Add(new TimeSlot(540, 750));
-            //fourth.Meetings.Add(new TimeSlot(780, 930));
-            //fourth.Meetings.Add(new TimeSlot(960, 1080));
-            //fourth.Meetings.Add(new TimeSlot(1080, 1110));
-
-            _people.Add(first);
-            _people.Add(second);
-            _people.Add(third);
-            //_people.Add(fourth);
-
-            _minLength = 30;
-
-        }
-
         static void PrintOutput()
         {
             if (_freeCommonIntervals.Count == 0) Console.WriteLine("Impossibile schedulare un meeting oggi.");
             foreach (TimeSlot timeSlot in _freeCommonIntervals) Console.WriteLine(timeSlot.StartTime + " - " + timeSlot.EndTime + ". Tempo: " + timeSlot.Length);
         }
-
-
 
     }
 }
