@@ -8,3 +8,5 @@ Given a list of users, the goal is to find all the possible timeslots inside wor
 * Schedulable meetings must be longer than a given time T expressed in minutes
 * Meetings must be scheduled only inside the working hours interval
 
+## Notes
+Feel free to send comments, use parts of this code and send pull requests.
