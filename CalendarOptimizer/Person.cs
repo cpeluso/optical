@@ -25,7 +25,8 @@ namespace CalendarOptimizer
 
             FreeIntervals.Add(new TimeSlot(AvailableFrom, Meetings[0].StartTime));
 
-            for ( i = 0; i < numberOfMeetings - 1; i++ ) FreeIntervals.Add(new TimeSlot(Meetings[i].EndTime, Meetings[i + 1].StartTime));
+            for ( i = 0; i < numberOfMeetings - 1; i++ )
+                FreeIntervals.Add(new TimeSlot(Meetings[i].EndTime, Meetings[i + 1].StartTime));
 
             FreeIntervals.Add(new TimeSlot(Meetings[i].EndTime, AvailableTo));
         }
@@ -40,11 +41,13 @@ namespace CalendarOptimizer
 
             foreach (TimeSlot meeting in Meetings)
             {
-                if (meeting.StartTime < AvailableFrom && meeting.EndTime < AvailableTo) meeting.StartTime = AvailableFrom;
-                if (meeting.EndTime > AvailableTo && meeting.StartTime < AvailableTo) meeting.EndTime = AvailableTo;
+                if (meeting.StartTime < AvailableFrom && meeting.EndTime < AvailableTo)
+                    meeting.StartTime = AvailableFrom;
+
+                if (meeting.EndTime > AvailableTo && meeting.StartTime < AvailableTo)
+                    meeting.EndTime = AvailableTo;
             }
         }
-
 
         // This method assumes that Meetings is sorted with key StartTime
         private void MergeMeetings()
@@ -65,7 +68,8 @@ namespace CalendarOptimizer
                         Meetings[i] = meetingMerged;
                         Meetings[i + counter].ToDelete = true;
                     }
-                    else meetingsMerged = false;
+                    else
+                        meetingsMerged = false;
 
                     counter++;
                 }
@@ -77,20 +81,13 @@ namespace CalendarOptimizer
         private TimeSlot TryToMergeMeetings(TimeSlot fstTimeSlot, TimeSlot sndTimeSlot)
         {
             if ( fstTimeSlot.StartTime < sndTimeSlot.StartTime && fstTimeSlot.EndTime > sndTimeSlot.StartTime && fstTimeSlot.EndTime < sndTimeSlot.EndTime)
-            {
                 return new TimeSlot(fstTimeSlot.StartTime, sndTimeSlot.EndTime);
-            }
 
             if ( fstTimeSlot.EndTime > sndTimeSlot.EndTime && fstTimeSlot.StartTime > sndTimeSlot.StartTime && fstTimeSlot.StartTime < sndTimeSlot.EndTime)
-            {
                 return new TimeSlot(sndTimeSlot.StartTime, fstTimeSlot.EndTime);
-            }
 
             if (fstTimeSlot.StartTime < sndTimeSlot.StartTime && fstTimeSlot.EndTime > sndTimeSlot.EndTime)
-            {
-
                 return new TimeSlot(fstTimeSlot.StartTime, fstTimeSlot.EndTime);
-            }
 
             return fstTimeSlot;
         }

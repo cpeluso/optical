@@ -5355,7 +5355,8 @@
     ]
   },
   "packageFolders": {
-    "/Users/carlopeluso/.nuget/packages/": {}
+    "/Users/carlopeluso/.nuget/packages/": {},
+    "/usr/local/share/dotnet/sdk/NuGetFallbackFolder": {}
   },
   "project": {
     "version": "1.0.0",
@@ -5366,6 +5367,9 @@
       "packagesPath": "/Users/carlopeluso/.nuget/packages/",
       "outputPath": "/Users/carlopeluso/Projects/optical/CalendarOptimizer/obj/",
       "projectStyle": "PackageReference",
+      "fallbackFolders": [
+        "/usr/local/share/dotnet/sdk/NuGetFallbackFolder"
+      ],
       "configFilePaths": [
         "/Users/carlopeluso/.config/NuGet/NuGet.Config"
       ],
@@ -5409,7 +5413,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/3.1.101/RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/3.1.200/RuntimeIdentifierGraph.json"
       }
     }
   }

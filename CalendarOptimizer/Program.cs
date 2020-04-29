@@ -7,6 +7,7 @@ using Google.Apis.Calendar.v3.Data;
 using Google.Apis.Services;
 using Google.Apis.Util.Store;
 using System.Threading;
+using System.Linq;
 
 namespace CalendarOptimizer
 {
@@ -18,32 +19,30 @@ namespace CalendarOptimizer
 
         static string[] Scopes = { CalendarService.Scope.CalendarReadonly };
         static string ApplicationName = "OptiCal";
-
         static UserCredential credential;
         static CalendarService _service;
+        static string[] accounts = {"EMAIL1", "EMAIL2"};
 
-        static bool _defaultLoading = false;
-        static string[] accounts = { "carlo@coolshop.it", "riccardo@coolshop.it" };
+        const int AVAILABLE_FROM = 600; //9.00
+        const int AVAILABLE_TO = 1080; //18.00
+        const int MINIMUM_LENGTH_OF_MEETING = 30; //30 minutes
 
         static void Main(string[] args)
         {
             LoadCredentials();
             IstantiateGoogleCalendar();
 
+            SendRequests(accounts);
+            //ExampleCalendar();
 
-            LoadCalendars(accounts);
-
-
-            //SearchCommonIntervals();
-            //PrintOutput();
+            SearchCommonIntervals();
+            PrintOutput();
         }
 
         static void LoadCredentials()
         {
-            using (var stream = new FileStream("/Users/carlopeluso/Projects/optical/CalendarOptimizer/credentials.json", FileMode.Open, FileAccess.Read))
+            using (var stream = new FileStream("INSERT YOUR credentials.json", FileMode.Open, FileAccess.Read))
             {
-                // The file token.json stores the user's access and refresh tokens, and is created
-                // automatically when the authorization flow completes for the first time.
                 string credPath = "token.json";
                 credential = GoogleWebAuthorizationBroker.AuthorizeAsync(
                     GoogleClientSecrets.Load(stream).Secrets,
@@ -64,38 +63,64 @@ namespace CalendarOptimizer
             });
         }
 
-        static void LoadCalendars(string[] accounts = null)
-        {
-            if (_defaultLoading) ExampleCalendar();
-            else SendRequests(accounts);
-        }
-
         static void SendRequests(string[] accounts)
         {
-            foreach (string account in accounts)
+            accounts.ToList().ForEach(account =>
             {
-                FreeBusyRequestItem calendar = new FreeBusyRequestItem();
-                FreeBusyRequest body = new FreeBusyRequest();
-                body.TimeMin = Convert.ToDateTime("2020-01-05T00:00:00.000Z");
-                body.TimeMax = Convert.ToDateTime("2020-03-05T23:59:59.000Z");
-                body.Items = new List<FreeBusyRequestItem>();
-                calendar.Id = account;
-                body.Items.Add(calendar);
-                body.TimeZone = "Europe/Rome";
+                Person person = new Person();
 
-                FreebusyResource.QueryRequest request = _service.Freebusy.Query(body);
-                FreeBusyResponse results = request.Execute();
+                FreeBusyResponse results = LoadRequest(account);
 
-                foreach (var cal in results.Calendars)
+                //Default case
+                person.AvailableFrom = AVAILABLE_FROM;
+                person.AvailableTo = AVAILABLE_TO;
+
+                LoadMeetings(person, results);
+            });
+
+            //Default case
+            _minLength = MINIMUM_LENGTH_OF_MEETING;
+        }
+
+        static void LoadMeetings(Person person, FreeBusyResponse results)
+        {
+            foreach (var calendar in results.Calendars)
+            {
+                calendar.Value.Busy.ToList().ForEach(value =>
                 {
-                    foreach (var b in cal.Value.Busy)
-                    {
-                        Console.WriteLine(b.Start + " - " + b.End);
-                    }
-                    Console.WriteLine("- - - - - - - - -");
-                }
+                    DateTime start = (DateTime)value.Start;
+                    DateTime end = (DateTime)value.End;
+
+                    //Function???
+                    int startTime = (start.Hour * 60) + start.Minute;
+                    int endTime = (end.Hour * 60) + end.Minute;
+
+                    person.Meetings.Add(new TimeSlot(startTime, endTime));
+                });
             }
-            
+
+            if (person.Meetings.Count > 0)
+                _people.Add(person);
+        }
+
+        static FreeBusyResponse LoadRequest(string account)
+        {
+            FreeBusyRequestItem calendarRequested = new FreeBusyRequestItem();
+
+            var today = DateTime.Now.ToString("yyyy-MM-dd");
+
+            FreeBusyRequest requestBody = new FreeBusyRequest{
+                TimeMin = Convert.ToDateTime(today + "T00:00:00.000Z"),
+                TimeMax = Convert.ToDateTime(today + "T23:59:59.000Z"),
+                Items = new List<FreeBusyRequestItem>(),
+                TimeZone = "Europe/Rome"
+            };
+
+            calendarRequested.Id = account;
+            requestBody.Items.Add(calendarRequested);
+
+            FreebusyResource.QueryRequest request = _service.Freebusy.Query(requestBody);
+            return request.Execute();
         }
 
         static void ExampleCalendar()
@@ -147,36 +172,53 @@ namespace CalendarOptimizer
 
         static void SearchCommonIntervals()
         {
-            foreach (Person person in _people) person.ComputeFreeIntervals();
+            int peopleCounter = 0;
+
+            _people.ForEach(person => person.ComputeFreeIntervals());
 
             Person referencePerson = _people[0];
             _people.Remove(referencePerson);
+
             _freeCommonIntervals = referencePerson.FreeIntervals;
 
             bool intersectionsFound = true;
 
-            while (intersectionsFound) foreach(Person person in _people) intersectionsFound = ComputeIntersections(person);
+            while (intersectionsFound)
+                foreach (Person person in _people)
+                {
+                    intersectionsFound = ComputeIntersections(person);
+                    peopleCounter++;
+
+                    if (peopleCounter == _people.Count)
+                        intersectionsFound = false;
+                }
         }
 
-        static bool ComputeIntersections(Person sndPerson)
+        static bool ComputeIntersections(Person person)
         {
             List<TimeSlot> currentCommonIntervals = new List<TimeSlot>();
 
             foreach(TimeSlot freeInterval in _freeCommonIntervals)
-                foreach(TimeSlot personFreeInterval in sndPerson.FreeIntervals)
+                foreach(TimeSlot personFreeInterval in person.FreeIntervals)
                     if (CanBeIntersected(freeInterval, personFreeInterval))
                         currentCommonIntervals.Add(GetIntersection(freeInterval, personFreeInterval));
 
             _freeCommonIntervals = currentCommonIntervals;
 
-            if (_freeCommonIntervals.Count <= 0) return false;
+            if (_freeCommonIntervals.Count <= 0)
+                return false;
+
             return true;
         }
 
         static bool CanBeIntersected(TimeSlot fstTimeSlot, TimeSlot sndTimeSlot)
         {
-            if (fstTimeSlot.EndTime < sndTimeSlot.StartTime || sndTimeSlot.EndTime < fstTimeSlot.StartTime) return false;
-            if (GetIntersection(fstTimeSlot, sndTimeSlot) == null) return false;
+            if (fstTimeSlot.EndTime < sndTimeSlot.StartTime || sndTimeSlot.EndTime < fstTimeSlot.StartTime)
+                return false;
+
+            if (GetIntersection(fstTimeSlot, sndTimeSlot) == null)
+                return false;
+
             return true;
         }
 
@@ -184,23 +226,31 @@ namespace CalendarOptimizer
         {
             TimeSlot timeSlot = new TimeSlot();
 
-            if (fstTimeSlot.StartTime > sndTimeSlot.StartTime) timeSlot.StartTime = fstTimeSlot.StartTime;
-            else timeSlot.StartTime = sndTimeSlot.StartTime;
+            if (fstTimeSlot.StartTime > sndTimeSlot.StartTime)
+                timeSlot.StartTime = fstTimeSlot.StartTime;
+            else
+                timeSlot.StartTime = sndTimeSlot.StartTime;
 
-            if (fstTimeSlot.EndTime < sndTimeSlot.EndTime) timeSlot.EndTime = fstTimeSlot.EndTime;
-            else timeSlot.EndTime = sndTimeSlot.EndTime;
+            if (fstTimeSlot.EndTime < sndTimeSlot.EndTime)
+                timeSlot.EndTime = fstTimeSlot.EndTime;
+            else
+                timeSlot.EndTime = sndTimeSlot.EndTime;
 
             timeSlot.Length = timeSlot.EndTime - timeSlot.StartTime;
 
-            if (timeSlot.Length < _minLength) return null;
+            if (timeSlot.Length < _minLength)
+                return null;
 
             return timeSlot;
         }
 
         static void PrintOutput()
         {
-            if (_freeCommonIntervals.Count == 0) Console.WriteLine("Impossibile schedulare un meeting oggi.");
-            foreach (TimeSlot timeSlot in _freeCommonIntervals) Console.WriteLine(timeSlot.StartTime + " - " + timeSlot.EndTime + ". Tempo: " + timeSlot.Length);
+            if (_freeCommonIntervals.Count == 0)
+                Console.WriteLine("Impossible to schedule a meeting today");
+
+            foreach (TimeSlot timeSlot in _freeCommonIntervals)
+                Console.WriteLine(timeSlot.StartTime + " - " + timeSlot.EndTime + ". Time: " + timeSlot.Length);
         }
 
     }
