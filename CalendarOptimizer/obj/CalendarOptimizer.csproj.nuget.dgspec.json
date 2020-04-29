@@ -1,18 +1,21 @@
 {
   "format": 1,
   "restore": {
-    "/Users/carlopeluso/Projects/CalendarOptimizer/CalendarOptimizer/CalendarOptimizer.csproj": {}
+    "/Users/carlopeluso/Projects/optical/CalendarOptimizer/CalendarOptimizer.csproj": {}
   },
   "projects": {
-    "/Users/carlopeluso/Projects/CalendarOptimizer/CalendarOptimizer/CalendarOptimizer.csproj": {
+    "/Users/carlopeluso/Projects/optical/CalendarOptimizer/CalendarOptimizer.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "/Users/carlopeluso/Projects/CalendarOptimizer/CalendarOptimizer/CalendarOptimizer.csproj",
+        "projectUniqueName": "/Users/carlopeluso/Projects/optical/CalendarOptimizer/CalendarOptimizer.csproj",
         "projectName": "CalendarOptimizer",
-        "projectPath": "/Users/carlopeluso/Projects/CalendarOptimizer/CalendarOptimizer/CalendarOptimizer.csproj",
+        "projectPath": "/Users/carlopeluso/Projects/optical/CalendarOptimizer/CalendarOptimizer.csproj",
         "packagesPath": "/Users/carlopeluso/.nuget/packages/",
-        "outputPath": "/Users/carlopeluso/Projects/CalendarOptimizer/CalendarOptimizer/obj/",
+        "outputPath": "/Users/carlopeluso/Projects/optical/CalendarOptimizer/obj/",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "/usr/local/share/dotnet/sdk/NuGetFallbackFolder"
+        ],
         "configFilePaths": [
           "/Users/carlopeluso/.config/NuGet/NuGet.Config"
         ],
@@ -35,6 +38,12 @@
       },
       "frameworks": {
         "netcoreapp3.1": {
+          "dependencies": {
+            "Google.Apis.Calendar.v3": {
+              "target": "Package",
+              "version": "[1.43.0.1851, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
@@ -50,7 +59,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/3.1.101/RuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/3.1.200/RuntimeIdentifierGraph.json"
         }
       }
     }

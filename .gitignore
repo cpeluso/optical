@@ -351,3 +351,9 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+*.dll
+
+*.cache
+
+CalendarOptimizer/obj/Debug/netcoreapp3.1/CalendarOptimizer.csproj.FileListAbsolute.txt
